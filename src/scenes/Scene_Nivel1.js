@@ -32,7 +32,7 @@ class Scene_Nivel1 extends Phaser.Scene {
 
         this.mapHeight = map.heightInPixels;
         this.levelFinished = false;
-        this.levelTime = 50;
+        this.levelTime = 25;
         this.collectiblesNeeded = 3;
         this.collectiblesFound = 0;
         this.isPaused = false;
