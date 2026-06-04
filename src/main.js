@@ -11,7 +11,7 @@ window.onload = function () {
                 debug: false
             }
         },
-        scene: [Scene_Menu, Scene_Nivel1, Scene_Nivel2, Scene_Nivel3],
+      scene: [Scene_Menu, Scene_Nivel1, Scene_Nivel2, Scene_Nivel3],
         pixelArt: true
     };
 
