@@ -32,6 +32,8 @@ class Scene_Nivel2 extends Phaser.Scene {
 
         capaPlataformas.setCollisionByExclusion([-1]);
 
+        this.capaPlataformas = capaPlataformas;
+        this.spikeTileIds = [982, 983];
         this.mapHeight = map.heightInPixels;
         this.levelFinished = false;
         this.levelTime = 25;
@@ -198,6 +200,7 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.updateJoltAnimation(isGrounded, moveInput);
 
         this.updateMovingPlatform();
+        this.checkSpikeTiles();
 
         if (this.player.body.bottom >= this.mapHeight - 2) {
             this.failLevel('TE CONSUMIO EL ABISMO');
@@ -312,25 +315,10 @@ class Scene_Nivel2 extends Phaser.Scene {
 
     // ========== PINCHOS ==========
     createSpikes(capaPlataformas) {
-        this.spikes = this.physics.add.staticGroup();
-        const spikeTiles = [982, 983];
-        
         for (let y = 0; y < 20; y++) {
             for (let x = 0; x < 40; x++) {
                 const tile = capaPlataformas.getTileAt(x, y);
-                if (tile && spikeTiles.includes(tile.index)) {
-                    // Sensor invisible que mata
-                    const spikeSensor = this.add.rectangle(
-                        x * 32 + 16,
-                        y * 32 + 16,
-                        28,
-                        28,
-                        0xFF0000,
-                        0
-                    );
-                    this.physics.add.existing(spikeSensor, true);
-                    this.spikes.add(spikeSensor);
-                    
+                if (tile && this.spikeTileIds.includes(tile.index)) {
                     // Efecto visual de peligro
                     const dangerGlow = this.add.rectangle(
                         x * 32 + 16,
@@ -351,13 +339,27 @@ class Scene_Nivel2 extends Phaser.Scene {
                 }
             }
         }
-        
-        // Colisión con pinchos
-        this.physics.add.overlap(this.player, this.spikes, () => {
-            if (!this.levelFinished) {
-                this.failLevel('PINCHOS MORTALES');
-            }
+    }
+
+    checkSpikeTiles() {
+        if (!this.player?.body?.blocked.down || !this.capaPlataformas) return;
+
+        const body = this.player.body;
+        const footY = body.bottom + 1;
+        const footXs = [
+            body.left + 3,
+            body.center.x,
+            body.right - 3
+        ];
+
+        const isOnSpike = footXs.some(x => {
+            const tile = this.capaPlataformas.getTileAtWorldXY(x, footY);
+            return tile && this.spikeTileIds.includes(tile.index);
         });
+
+        if (isOnSpike) {
+            this.failLevel('PINCHOS MORTALES');
+        }
     }
 
     // ========== DASH PICKUPS ==========
