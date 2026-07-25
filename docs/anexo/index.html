@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Escape — Anexo: Mejoras y Corrección de Bugs</title>
+<style>
+  :root{
+    --bg:#0c0a1c; --panel:#161430; --panel2:#1d1b3a;
+    --cyan:#00f5ff; --magenta:#ff2a6d; --yellow:#ffe66d; --green:#39ff9e; --red:#ff5d73;
+    --text:#e8ecff; --muted:#9aa6d6; --line:#2b2a52;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg); color:var(--text);
+    font-family:'Segoe UI',system-ui,Arial,sans-serif; font-size:14.5px; line-height:1.55;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .page{max-width:900px; margin:0 auto; padding:40px 52px;}
+  h1{font-size:34px; font-weight:900; letter-spacing:3px; color:#eafeff;
+    text-shadow:0 0 8px rgba(0,245,255,.6),0 0 22px rgba(0,245,255,.35); margin:0 0 4px;}
+  h2{font-size:22px; color:var(--cyan); text-transform:uppercase; letter-spacing:1.5px;
+    border-left:5px solid var(--magenta); padding-left:12px; margin:26px 0 14px;}
+  h3{font-size:16px; color:var(--yellow); margin:0 0 4px;}
+  .sub{color:var(--magenta); letter-spacing:6px; font-weight:700; font-size:13px;}
+  .meta{color:var(--muted); font-size:13px; margin-top:10px; line-height:1.8;}
+  .rule{height:2px; margin:20px 0 8px;
+    background:linear-gradient(90deg,var(--cyan),var(--magenta),transparent);}
+  .item{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:14px; break-inside:avoid; page-break-inside:avoid;}
+  .tag{display:inline-block; font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    padding:2px 8px; border-radius:20px; margin-left:6px; vertical-align:middle;}
+  .t-j{background:rgba(255,230,109,.12); color:var(--yellow); border:1px solid rgba(255,230,109,.4);}
+  .t-d{background:rgba(0,245,255,.12); color:var(--cyan); border:1px solid rgba(0,245,255,.4);}
+  .t-k{background:rgba(255,42,109,.12); color:var(--magenta); border:1px solid rgba(255,42,109,.4);}
+  .ba{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;}
+  .ba .box{border-radius:9px; padding:10px 12px; font-size:13px;}
+  .before{background:rgba(255,93,115,.08); border:1px solid rgba(255,93,115,.35);}
+  .after{background:rgba(57,255,158,.07); border:1px solid rgba(57,255,158,.35);}
+  .box .lbl{font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:4px;}
+  .before .lbl{color:var(--red);} .after .lbl{color:var(--green);}
+  code{background:#0008; color:var(--yellow); padding:1px 5px; border-radius:5px; font-size:12px;}
+  .who{color:var(--muted); font-size:12px; margin-top:2px;}
+  .foot{color:var(--muted); font-size:12px; text-align:center; margin-top:26px; border-top:1px solid var(--line); padding-top:12px;}
+  .break{break-before:page; page-break-before:always;}
+  @media print{ .page{padding:20px 26px;} body{font-size:12.5px;} }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="sub">NEON ESCAPE</div>
+  <h1>Anexo — Mejoras y Corrección de Bugs</h1>
+  <div class="rule"></div>
+  <div class="meta">
+    Escuela Politécnica Nacional · Ingeniería de Software GR1 · Juegos Interactivos<br>
+    Docente: Ing. Vicente Adrián Egüez Sarzosa · 24 de julio de 2026<br>
+    Equipo: Dylan Granizo Ayala · Anderson Cango · Dayana Lema<br>
+    Juego en vivo: https://dylan1410.github.io/NeonEscape/
+  </div>
+  <p class="meta" style="margin-top:14px;">Documento de respaldo del examen práctico: detalla,
+  para cada mejora y bug, el <b style="color:var(--red)">estado anterior</b> y la
+  <b style="color:var(--green)">solución aplicada</b>.</p>
+
+  <!-- ===== 9 MEJORAS ===== -->
+  <h2>Parte A · Las 9 mejoras del examen (3 por integrante)</h2>
+
+  <div class="item">
+    <h3>1. Coyote time + jump buffer <span class="tag t-j">Dylan · N1</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> El salto se sentía rígido: al caer del borde de una plataforma no respondía, y el input de salto justo antes de aterrizar se perdía.</div>
+      <div class="box after"><span class="lbl">Después</span> <code>coyoteTimer</code> (100 ms de gracia tras dejar el suelo) y <code>jumpBufferTimer</code> (120 ms de anticipación) en <code>update()</code>, conservando el doble salto.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>2. SFX y feedback de recolección <span class="tag t-j">Dylan · N1</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Recoger núcleos y saltar no producían ningún sonido ni impacto perceptible.</div>
+      <div class="box after"><span class="lbl">Después</span> <code>collect.wav</code> al recolectar y un tick sonoro al saltar, con micro-animación de escala en el núcleo.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>3. Timer jugable + aviso de peligro <span class="tag t-j">Dylan · N1</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Temporizador de 25 s (muy ajustado) y sin ninguna señal de que el tiempo se agotaba.</div>
+      <div class="box after"><span class="lbl">Después</span> Tiempo a 40 s; el contador <b>parpadea en rojo</b> cuando quedan ≤ 10 s (tween de color/alpha).</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>4. Fix de progresión entre niveles <span class="tag t-d">Anderson · N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Completar el Nivel 2 llamaba <code>unlockLevel(2)</code> y la tecla <code>N</code> reiniciaba el propio nivel en vez de avanzar.</div>
+      <div class="box after"><span class="lbl">Después</span> <code>unlockLevel(3)</code> y <code>scene.start('Scene_Nivel3')</code> en la rama de la tecla siguiente.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>5. Assets fantasma + SFX de dash <span class="tag t-d">Anderson · N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Errores <b>404</b> en consola por <code>joltDash_strip.png</code> y <code>speed_boost.wav</code> inexistentes; el dash no tenía sonido.</div>
+      <div class="box after"><span class="lbl">Después</span> Cargas y código muerto eliminados (sin 404); SFX de dash con un audio ya existente.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>6. Feedback de daño en pinchos <span class="tag t-d">Anderson · N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Morir en los pinchos no tenía ningún impacto audiovisual.</div>
+      <div class="box after"><span class="lbl">Después</span> <code>hit.wav</code> + <b>flash rojo</b> de cámara al pisar pinchos, antes de la pantalla de derrota.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>7. Música de nivel con fade <span class="tag t-k">Dayana · N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> El Nivel 3 no tenía música, inconsistente con los Niveles 1 y 2.</div>
+      <div class="box after"><span class="lbl">Después</span> <code>bgm.wav</code> en loop con <i>fade-in/out</i> y detención limpia al salir de la escena.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>8. SFX de combate <span class="tag t-k">Dayana · N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Disparar, destruir drones y ganar/perder eran acciones mudas.</div>
+      <div class="box after"><span class="lbl">Después</span> SFX en <code>shoot()</code> y <code>hitEnemy()</code>, más jingles <code>win.wav</code>/<code>lose.wav</code>.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>9. Menú de pausa + limpieza de código muerto <span class="tag t-k">Dayana · N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> El Nivel 3 no tenía menú de pausa; existían escenas huérfanas <code>Scene_Game.js</code> y <code>Scene_End.js</code>.</div>
+      <div class="box after"><span class="lbl">Después</span> Pausa con <code>ESC</code> (overlay + <code>physics.pause()</code>); archivos huérfanos eliminados.</div>
+    </div>
+  </div>
+
+  <!-- ===== BUGFIXES ===== -->
+  <h2 class="break">Parte B · Corrección de bugs estructurales (playtesting)</h2>
+  <p class="meta" style="margin-bottom:14px;">Fallos descubiertos durante las corridas de
+  playtesting que dejaban niveles incompletables. Corregidos como parte del pulido.</p>
+
+  <div class="item">
+    <h3>B1. Navegación: el Nivel 2 mostraba el mapa del Nivel 1 <span class="tag t-d">N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> El Nivel 2 cargaba su tilemap con la clave de caché <code>mapa_nivel1</code> (igual que el Nivel 1); Phaser servía el mapa ya cacheado del Nivel 1.</div>
+      <div class="box after"><span class="lbl">Después</span> Clave renombrada a <code>mapa_nivel2</code> en la carga y en <code>make.tilemap</code>. Navegación Menú→N1→N2→N3 verificada.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B2. Mapa del Nivel 2 injugable <span class="tag t-d">N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> El spawn quedaba <b>dentro de bloques sólidos</b> y el piso era un <b>muro continuo de pinchos</b> sin ruta segura: imposible avanzar.</div>
+      <div class="box after"><span class="lbl">Después</span> Mapa rediseñado: piso continuo + <b>3 tiras de pinchos</b> de 2 tiles cruzables con dash/salto; pickups, núcleos y portal reubicados; timer a 45 s; plataforma móvil retirada.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B3. Pickups de energía incolectables <span class="tag t-d">N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> El cuerpo de física del pickup estaba dentro de un <code>container</code> en posición local (0,0); Arcade Physics ignora la transformación del container, así que el cuerpo quedaba en (0,0) y el overlap nunca ocurría.</div>
+      <div class="box after"><span class="lbl">Después</span> Glow/ícono/cuerpo colocados directamente en coordenadas del mundo, con hitbox generoso. Se recogen correctamente.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B4. Dash "infinito" <span class="tag t-d">N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Cooldown de 0.8 s con auto-recarga: se podía spamear y los pickups no servían de nada.</div>
+      <div class="box after"><span class="lbl">Después</span> Cooldown de <code>3.5 s</code>; los pickups de energía recargan el dash al instante, dándoles propósito.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B5. Portal del Nivel 2 inalcanzable <span class="tag t-d">N2</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> <code>portalY = 360</code>: la caja de meta quedaba por debajo de la superficie donde el jugador se para (y≈320), sin overlap posible.</div>
+      <div class="box after"><span class="lbl">Después</span> <code>portalY = 296</code>, alineado con la superficie; se toca caminando.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B6. Las balas no se disparaban <span class="tag t-k">N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> <code>setVelocityX()</code> se ejecutaba <b>antes</b> de agregar la bala al physics group, que reseteaba la velocidad: la bala nacía con velocidad 0 y quedaba pegada al jugador. Sin balas no se mataban drones → portal bloqueado.</div>
+      <div class="box after"><span class="lbl">Después</span> Se agrega la bala al grupo primero y la velocidad se fija al final (igual para las torretas).</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B7. Piso tóxico letal (sludge) <span class="tag t-k">N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Una franja verde en el piso mataba al tocarla sin una razón de diseño clara, bloqueando el paso.</div>
+      <div class="box after"><span class="lbl">Después</span> Sludge eliminado por completo (cargas, creación, colisión y métodos). Piso transitable de punta a punta.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B8. Drones inalcanzables <span class="tag t-k">N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Los saltos entre plataformas eran de ~125 px y el salto de Kael llegaba a ~126 px (al límite): las plataformas altas eran inalcanzables y con ellas 2 drones.</div>
+      <div class="box after"><span class="lbl">Después</span> Salto de Kael <code>-450 → -520</code> (alcanza ~169 px), con margen para escalar toda la torre y destruir los 5 drones.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B9. Contacto con enemigos sin daño <span class="tag t-k">N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Los hitboxes de drones y torretas eran pequeños, así que el contacto con el jugador casi nunca registraba daño.</div>
+      <div class="box after"><span class="lbl">Después</span> Hitboxes ampliados (drones <code>26×28</code>, torretas <code>28×30</code>): los disparos aciertan más fácil y el contacto hace daño de forma fiable.</div>
+    </div>
+  </div>
+
+  <div class="item">
+    <h3>B10. Portal del Nivel 3 inalcanzable <span class="tag t-k">N3</span></h3>
+    <div class="ba">
+      <div class="box before"><span class="lbl">Antes</span> Portal en <code>y=505</code>, ~45 px sobre el piso; la caja de meta quedaba encima del jugador parado y no había overlap.</div>
+      <div class="box after"><span class="lbl">Después</span> Bajado a <code>y=525</code> con cuerpo más alto y <code>refreshBody()</code>; se completa caminando al portal.</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Neon Escape · Anexo de mejoras y corrección de bugs · EPN — Ingeniería de Software GR1 · 2026<br>
+    Todas las mejoras y correcciones quedaron implementadas y verificadas en la versión desplegada.
+  </div>
+</div>
+</body>
+</html>
