@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Escape — Game Design Document</title>
+<style>
+  :root{
+    --bg:#0c0a1c; --bg2:#120b22; --panel:#161430; --panel2:#1d1b3a;
+    --cyan:#00f5ff; --magenta:#ff2a6d; --yellow:#ffe66d; --violet:#6d5dff;
+    --text:#e8ecff; --muted:#9aa6d6; --line:#2b2a52;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI',system-ui,Arial,sans-serif;
+    font-size:15px; line-height:1.6;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .page{
+    max-width:900px; margin:0 auto; padding:48px 56px;
+  }
+  h1,h2,h3,h4{font-weight:800; letter-spacing:.5px; line-height:1.2; margin:0 0 .4em;}
+  h2{
+    font-size:26px; color:var(--cyan); text-transform:uppercase; letter-spacing:2px;
+    border-left:5px solid var(--magenta); padding-left:14px; margin-top:8px;
+  }
+  h3{font-size:19px; color:var(--yellow); margin-top:24px;}
+  h4{font-size:16px; color:var(--cyan);}
+  p{margin:.5em 0;}
+  a{color:var(--cyan);}
+  .muted{color:var(--muted);}
+  section{margin-bottom:20px;}
+  .sec{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:28px 32px; margin-bottom:26px;
+  }
+  /* Page breaks */
+  .break{break-before:page; page-break-before:always;}
+  .sec, .card, table, pre{break-inside:avoid;}
+
+  /* Cover */
+  .cover{
+    min-height:92vh; display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; border-radius:16px;
+    background:
+      radial-gradient(1200px 500px at 50% -10%, rgba(0,245,255,.10), transparent 60%),
+      radial-gradient(900px 500px at 50% 120%, rgba(255,42,109,.12), transparent 60%),
+      linear-gradient(160deg,#0b0a1e,#161334);
+    border:1px solid var(--line); padding:60px 40px;
+  }
+  .logo{
+    font-size:64px; font-weight:900; letter-spacing:8px; margin:6px 0 2px;
+    color:#eafeff;
+    text-shadow:
+      0 0 6px rgba(0,245,255,.9), 0 0 22px rgba(0,245,255,.55),
+      0 0 40px rgba(0,245,255,.35), 3px 0 0 rgba(255,42,109,.7), -3px 0 0 rgba(0,245,255,.6);
+  }
+  .logo .sub{display:block; font-size:16px; letter-spacing:12px; color:var(--magenta);
+    text-shadow:0 0 10px rgba(255,42,109,.6); margin-top:8px; font-weight:700;}
+  .doc-type{margin-top:26px; font-size:15px; letter-spacing:6px; color:var(--muted); text-transform:uppercase;}
+  .rule{height:2px; width:220px; margin:24px auto;
+    background:linear-gradient(90deg,transparent,var(--cyan),var(--magenta),transparent);}
+  .cover-meta{margin-top:10px; font-size:15px; line-height:1.9;}
+  .cover-meta b{color:var(--cyan);}
+  .team{margin-top:22px; display:flex; gap:14px; flex-wrap:wrap; justify-content:center;}
+  .team .m{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px 18px; font-weight:700;}
+  .team .m span{display:block; font-size:12px; color:var(--muted); font-weight:400;}
+
+  /* Cards & grids */
+  .grid{display:grid; gap:18px;}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g2{grid-template-columns:repeat(2,1fr);}
+  .card{background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:18px 20px;}
+  .card.j{border-top:3px solid var(--yellow);}
+  .card.d{border-top:3px solid var(--cyan);}
+  .card.k{border-top:3px solid var(--magenta);}
+  .chip{display:inline-block; font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    padding:3px 9px; border-radius:20px; margin:2px 4px 2px 0;}
+  .chip.cy{background:rgba(0,245,255,.12); color:var(--cyan); border:1px solid rgba(0,245,255,.4);}
+  .chip.mg{background:rgba(255,42,109,.12); color:var(--magenta); border:1px solid rgba(255,42,109,.4);}
+  .chip.yl{background:rgba(255,230,109,.12); color:var(--yellow); border:1px solid rgba(255,230,109,.4);}
+  .avatar{width:56px; height:56px; border-radius:50%; margin-bottom:8px; position:relative;}
+  .avatar::after{content:""; position:absolute; left:11px; top:24px; width:34px; height:8px; background:#0009; border-radius:3px;}
+
+  table{width:100%; border-collapse:collapse; margin:14px 0; font-size:13.5px;}
+  th,td{border:1px solid var(--line); padding:9px 11px; text-align:left; vertical-align:top;}
+  th{background:var(--panel2); color:var(--cyan); text-transform:uppercase; font-size:12px; letter-spacing:.5px;}
+  tr:nth-child(even) td{background:rgba(255,255,255,.02);}
+  td code, p code, li code{background:#0008; color:var(--yellow); padding:1px 6px; border-radius:5px; font-size:12.5px;}
+
+  pre.map{
+    background:#07061a; border:1px solid var(--line); border-radius:10px;
+    padding:16px; overflow-x:auto; font-family:'Consolas','Courier New',monospace;
+    font-size:12px; line-height:1.35; color:#b9f5ff; letter-spacing:1px;
+  }
+  .legend{font-size:12.5px; color:var(--muted); margin-top:6px;}
+  ul{margin:.4em 0 .4em 0; padding-left:20px;} li{margin:.25em 0;}
+  .kbd{display:inline-block; background:#0008; border:1px solid var(--line); border-bottom-width:2px;
+    border-radius:5px; padding:1px 7px; font-family:monospace; font-size:12px; color:var(--cyan);}
+  .toc li{margin:.35em 0;}
+  .note{background:rgba(109,93,255,.10); border:1px solid rgba(109,93,255,.4); border-radius:10px; padding:14px 18px; margin:14px 0;}
+  .foot{color:var(--muted); font-size:12px; text-align:center; margin-top:30px; border-top:1px solid var(--line); padding-top:14px;}
+  .run{border-left:3px solid var(--cyan); padding:2px 0 2px 16px; margin:12px 0;}
+  .run.r2{border-color:var(--magenta);} .run.r3{border-color:var(--yellow);}
+  .run b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<!-- ============ PORTADA ============ -->
+<div class="page">
+  <div class="cover">
+    <div class="logo">NEON&nbsp;ESCAPE<span class="sub">AETHELGARD</span></div>
+    <div class="doc-type">Game Design Document</div>
+    <div class="rule"></div>
+    <div class="cover-meta">
+      <div><b>Escuela Politécnica Nacional</b></div>
+      <div>Ingeniería de Software &nbsp;·&nbsp; GR1</div>
+      <div>Materia: <b>Juegos Interactivos</b></div>
+      <div>Docente: Ing. Vicente Adrián Egüez Sarzosa</div>
+      <div class="muted">Quito · 24 de julio de 2026</div>
+    </div>
+    <div class="team">
+      <div class="m">Dylan Granizo Ayala<span>Jolt · Nivel 1</span></div>
+      <div class="m">Anderson Cango<span>Dash · Nivel 2</span></div>
+      <div class="m">Dayana Lema<span>Kael · Nivel 3</span></div>
+    </div>
+  </div>
+
+  <!-- Índice -->
+  <section class="sec" style="margin-top:26px;">
+    <h2>Índice</h2>
+    <ol class="toc">
+      <li>Portada y datos generales</li>
+      <li>Historia y narrativa</li>
+      <li>Personajes</li>
+      <li>Mecánicas de juego</li>
+      <li>Diseño de niveles</li>
+      <li>Bitácora e informe de playtesting (Examen)</li>
+    </ol>
+    <p class="muted" style="margin-top:10px;">
+      Motor: Phaser 3.60 (arquitectura web, sin build). Despliegue en vivo:
+      <a href="https://dylan1410.github.io/NeonEscape/">https://dylan1410.github.io/NeonEscape/</a><br>
+      Repositorio: <a href="https://github.com/Dylan1410/NeonEscape">github.com/Dylan1410/NeonEscape</a>
+    </p>
+  </section>
+</div>
+
+<!-- ============ 1. NARRATIVA ============ -->
+<div class="page break">
+  <section class="sec">
+    <h2>1 · Historia y Narrativa</h2>
+
+    <h3>El mundo: Complejo Aethelgard</h3>
+    <p>
+      <b>Aethelgard</b> es un colosal complejo industrial-corporativo de estética cyberpunk:
+      sectores de ensamblaje automatizados, corredores de contramedidas y un núcleo de
+      laboratorios de bioingeniería. Durante décadas, Aethelgard fabricó <b>sujetos
+      cibernéticos</b> —humanos aumentados con implantes— para tareas de riesgo. Cuando el
+      proyecto se volvió inestable, la corporación decidió eliminar toda evidencia.
+    </p>
+
+    <h3>El conflicto: La Purga Central</h3>
+    <p>
+      La inteligencia de gestión del complejo activa la <b>Purga Central</b>: un protocolo de
+      autodestrucción por sectores que borra a todos los sujetos y sella las salidas. Los
+      relojes de cada zona marcan la cuenta regresiva. Quedarse demasiado tiempo significa ser
+      consumido por el colapso de energía del sector.
+    </p>
+
+    <h3>Los protagonistas y su objetivo</h3>
+    <p>
+      Tres sujetos cibernéticos —<b class="chip yl">JOLT</b> <b class="chip cy">DASH</b>
+      <b class="chip mg">KAEL</b>— logran romper su confinamiento. Cada uno posee una
+      modificación distinta que resulta clave para atravesar un tramo del complejo. Su objetivo
+      es simple y desesperado: <b>escapar de Aethelgard antes de que la Purga Central los
+      alcance</b>, cruzando el Sector de Ensamblaje, el Corredor de Contramedidas y el Núcleo de
+      Laboratorios, y activando en cada uno el <b>portal de extracción</b>.
+    </p>
+    <div class="note">
+      <b>Tema.</b> Neon Escape es una fuga contrarreloj: cada nivel es una jaula que se cierra, y
+      la habilidad única de cada personaje es la única forma de salir de ella a tiempo.
+    </div>
+  </section>
+</div>
+
+<!-- ============ 2. PERSONAJES ============ -->
+<div class="page break">
+  <section class="sec">
+    <h2>2 · Personajes</h2>
+    <p class="muted">Fichas técnicas de los tres jugables y de las amenazas del complejo.</p>
+
+    <div class="grid g3" style="margin-top:16px;">
+      <div class="card j">
+        <div class="avatar" style="background:radial-gradient(circle at 40% 35%,#fff6c9,#ffcc00 60%,#a07b00);"></div>
+        <h4 style="color:var(--yellow)">JOLT</h4>
+        <div><span class="chip yl">Doble salto</span></div>
+        <p class="muted" style="font-size:13px;">Rol: sabotaje industrial · Nivel 1</p>
+        <p style="font-size:13.5px;">Ágil y liviano. Sus servos de piernas le permiten un
+        <b>segundo impulso en el aire</b> para alcanzar plataformas y los núcleos de energía
+        suspendidos del Sector de Ensamblaje.</p>
+        <p style="font-size:12.5px;" class="muted"><b>Visual:</b> silueta amarilla, animaciones
+        de idle, carrera, salto y derrota (sprites 96×96).</p>
+      </div>
+      <div class="card d">
+        <div class="avatar" style="background:radial-gradient(circle at 40% 35%,#d6ffff,#00f5ff 60%,#007a8a);"></div>
+        <h4 style="color:var(--cyan)">DASH</h4>
+        <div><span class="chip cy">Impulso horizontal</span></div>
+        <p class="muted" style="font-size:13px;">Rol: ruta óptima de escape · Nivel 2</p>
+        <p style="font-size:13.5px;">Especialista en velocidad. Ejecuta un <b>dash</b> que lo
+        vuelve intangible al peligro por una fracción de segundo, ideal para cruzar las
+        <b>tiras de pinchos</b> del Corredor de Contramedidas.</p>
+        <p style="font-size:12.5px;" class="muted"><b>Visual:</b> estela cian, indicador de
+        recarga de dash en el HUD.</p>
+      </div>
+      <div class="card k">
+        <div class="avatar" style="background:radial-gradient(circle at 40% 35%,#ffd0e2,#ff2a6d 60%,#7a1436);"></div>
+        <h4 style="color:var(--magenta)">KAEL</h4>
+        <div><span class="chip mg">Disparo táctico</span></div>
+        <p class="muted" style="font-size:13px;">Rol: neutralizar defensas · Nivel 3</p>
+        <p style="font-size:13.5px;">Combatiente. Equipado con un <b>arma de proyectiles</b>
+        para derribar drones y avanzar por el Núcleo de Laboratorios, defendido por sistemas
+        automáticos.</p>
+        <p style="font-size:12.5px;" class="muted"><b>Visual:</b> sprites 32×32 con animaciones
+        de idle, carrera, salto, disparo y derrota.</p>
+      </div>
+    </div>
+
+    <h3>Enemigos y amenazas</h3>
+    <div class="grid g2">
+      <div class="card">
+        <h4>Drones de patrulla</h4>
+        <p style="font-size:13.5px;">Unidades voladoras que patrullan horizontalmente a distintas
+        alturas con leve oscilación vertical. <b>Objetivo del Nivel 3:</b> destruir 5 drones para
+        habilitar el portal. Contacto = daño al jugador.</p>
+      </div>
+      <div class="card">
+        <h4>Torretas fijas</h4>
+        <p style="font-size:13.5px;">Emplazamientos inmóviles que <b>disparan proyectiles</b> en
+        una dirección a intervalos regulares. Se pueden destruir, pero no cuentan para el
+        objetivo. Contacto y proyectil = daño.</p>
+      </div>
+      <div class="card">
+        <h4>Pinchos (Corredor)</h4>
+        <p style="font-size:13.5px;">Tiles mortales en el piso del Nivel 2 (<code>982/983</code>).
+        Pisarlos es letal; se cruzan con el <b>dash</b> o un salto bien cronometrado. Telegrafiados
+        con un halo rojo pulsante.</p>
+      </div>
+      <div class="card">
+        <h4>El Abismo / La Purga</h4>
+        <p style="font-size:13.5px;">Caer fuera del mapa o agotar el <b>tiempo del sector</b>
+        provoca la derrota inmediata ("Te consumió el abismo" / "Tiempo agotado"), representando el
+        avance de la Purga Central.</p>
+      </div>
+    </div>
+    <p class="muted" style="font-size:13px; margin-top:10px;"><b>NPCs:</b> el juego no presenta
+    NPCs aliados; el antagonista es el propio sistema del complejo (la Purga y sus defensas
+    automáticas), lo que refuerza la sensación de aislamiento de la fuga.</p>
+  </section>
+</div>
+
+<!-- ============ 3. MECÁNICAS ============ -->
+<div class="page break">
+  <section class="sec">
+    <h2>3 · Mecánicas de Juego</h2>
+
+    <h3>Movimiento y salto</h3>
+    <ul>
+      <li><b>Desplazamiento:</b> <span class="kbd">←</span> <span class="kbd">→</span> a 210 px/s, con volteo del sprite según la dirección.</li>
+      <li><b>Salto:</b> <span class="kbd">↑</span>. Jolt dispone de <b>doble salto</b>; Dash y Kael de salto simple.</li>
+      <li><b>Game feel (Nivel 1):</b> <b>Coyote time</b> (~100 ms de gracia para saltar tras dejar la plataforma) y <b>jump buffer</b> (~120 ms de anticipación del input), para un salto responsivo y no rígido.</li>
+    </ul>
+
+    <h3>Habilidades especiales</h3>
+    <ul>
+      <li><b>Dash (Nivel 2):</b> <span class="kbd">ESPACIO</span>. Impulso de 650 px/s por 0.12 s que ignora el daño de pinchos. Recarga lenta (<code>3.5 s</code>); los <b>pickups de energía ⚡</b> la recargan al instante.</li>
+      <li><b>Disparo (Nivel 3):</b> <span class="kbd">ESPACIO</span>. Proyectil horizontal (560 px/s) con cadencia limitada (~260 ms). Destruye drones y torretas con explosión.</li>
+    </ul>
+
+    <h3>Colisiones y objetos</h3>
+    <ul>
+      <li><b>Plataformas:</b> colisión sólida por tilemap (Niveles 1–2) o por rectángulos físicos (Nivel 3).</li>
+      <li><b>Núcleos de energía:</b> 3 coleccionables por nivel de plataformas; se recogen por contacto con SFX y efecto de recolección.</li>
+      <li><b>Portal de extracción:</b> permanece <b>bloqueado</b> hasta cumplir el objetivo (recoger 3 núcleos / destruir 5 drones); al desbloquearse cambia de color y anima.</li>
+      <li><b>Power-ups:</b> pickups de dash (Nivel 2) que restauran la habilidad.</li>
+    </ul>
+
+    <h3>Condiciones de victoria y derrota</h3>
+    <table>
+      <tr><th>Sistema</th><th>Descripción</th></tr>
+      <tr><td><b>Victoria</b></td><td>Cumplir el objetivo del nivel y tocar el portal desbloqueado. Desbloquea el siguiente nivel.</td></tr>
+      <tr><td><b>Derrota</b></td><td>Tiempo agotado, caer al abismo, pisar pinchos (N2) o perder toda la vida (N3, 3 impactos).</td></tr>
+      <tr><td><b>Vida (N3)</b></td><td>3 puntos de salud con invulnerabilidad breve tras recibir daño (tinte rojo + sacudida de cámara).</td></tr>
+      <tr><td><b>Puntaje (N3)</b></td><td>Contador de drones eliminados (0/5) mostrado en el HUD.</td></tr>
+      <tr><td><b>Tiempo</b></td><td>Temporizador por sector (N1: 40 s, N2: 45 s) con aviso de peligro parpadeante en los últimos 10 s.</td></tr>
+    </table>
+
+    <h3>Progresión y persistencia</h3>
+    <p>El desbloqueo de niveles se guarda en <code>localStorage</code> con la clave
+    <code>neonEscapeUnlockedLevel</code>. El menú lee ese valor para habilitar los botones de
+    nivel, permitiendo continuar entre sesiones.</p>
+  </section>
+</div>
+
+<!-- ============ 4. DISEÑO DE NIVELES ============ -->
+<div class="page break">
+  <section class="sec">
+    <h2>4 · Diseño de Niveles</h2>
+    <p class="muted">Mapas de la capa de plataformas (grilla de 40×20 tiles, 1280×640 px).
+    Leyenda: <code>#</code> sólido · <code>^</code> pincho · <code>S</code> spawn ·
+    <code>N</code> núcleo · <code>E</code> pickup de dash · <code>P</code> portal.</p>
+
+    <h3>Nivel 1 — Sector de Ensamblaje <span class="chip yl">Jolt</span></h3>
+    <p style="font-size:13.5px;">Introduce el <b>doble salto</b>. Superficie elevada con dos fosos
+    y una <b>plataforma móvil</b> que cruza el vacío mayor; tres núcleos suspendidos exigen usar el
+    doble salto para alcanzarlos. Portal a la derecha, sobre la plataforma final.</p>
+<pre class="map">     0         1         2         3
+     0123456789012345678901234567890123456789
+ 5   ######...........N.........#############
+ 7   ........N.......................N.......
+ 8   .................mm.....................   m = plataforma móvil
+ 9   .S..........##...mm..................P..
+10   ##########..##........##################   piso (dos fosos)</pre>
+
+    <h3>Nivel 2 — Corredor de Contramedidas <span class="chip cy">Dash</span></h3>
+    <p style="font-size:13.5px;">Enseña el <b>dash</b>. Piso continuo con <b>tres tiras de
+    pinchos</b> de 2 tiles; antes de cada una hay un <b>pickup de energía</b> para asegurar el dash.
+    Ritmo de izquierda a derecha: recoger, recargar, cruzar. Portal al final.</p>
+<pre class="map">     0         1         2         3
+     0123456789012345678901234567890123456789
+ 9   ..S..N...E.....N...E.....N...E.......P..
+10   ##########^^########^^########^^########   piso con 3 tiras de pinchos</pre>
+
+    <h3>Nivel 3 — Núcleo de Laboratorios <span class="chip mg">Kael</span></h3>
+    <p style="font-size:13.5px;">Arena vertical de <b>combate y plataformeo</b>. Siete plataformas
+    escalonadas conducen a <b>5 drones</b> a distintas alturas (cada uno alineado con una plataforma
+    para dispararle) y <b>4 torretas</b>. Al eliminar los 5 drones se habilita el portal, abajo a la
+    derecha.</p>
+<pre class="map">   (arena 800×600 · d = dron · t = torreta · P = portal)
+   .........d..........................d.t...
+   .................#####........#####.......   plataformas altas
+   ...........##########.....................
+   .......................d..................
+   ..............###############.............
+   ..d..t...........................######...
+   .#########..........................d.t...
+   .....S..............................P.....   inicio ......... portal
+   ##########################################   piso</pre>
+
+    <h3>Flujo de dificultad</h3>
+    <p>La curva sube de forma controlada: <b>N1</b> enseña movimiento y verticalidad (doble salto,
+    coleccionables); <b>N2</b> añade presión de reflejos y timing (pinchos + dash + reloj más
+    ajustado); <b>N3</b> integra combate, gestión de vida y plataformeo vertical. Cada nivel
+    presenta una única mecánica dominante ligada a su personaje, evitando sobrecarga cognitiva.</p>
+  </section>
+</div>
+
+<!-- ============ 5. PLAYTESTING ============ -->
+<div class="page break">
+  <section class="sec">
+    <h2>5 · Bitácora e Informe de Playtesting <span class="chip mg">Examen</span></h2>
+
+    <h3>Metodología</h3>
+    <p>Se aplicó <b>Playtesting Cruzado en Solitario</b>: cada integrante jugó el juego completo
+    (los tres niveles) <b>3 veces consecutivas</b>, de forma individual y aislada, registrando cada
+    bug, fricción o aspecto estético mejorable. Al terminar todas las corridas, el equipo consolidó
+    los hallazgos y asignó <b>3 mejoras por integrante</b> (9 en total para un equipo de 3).</p>
+
+    <!-- Dylan -->
+    <h3>Bitácora — Dylan Granizo Ayala <span class="chip yl">enfoque Nivel 1</span></h3>
+    <div class="run"><b>Corrida 1.</b> El salto se siente rígido: al caer del borde de una
+      plataforma no responde. Recoger núcleos no produce ningún sonido ni impacto. El temporizador
+      de 25 s se agota antes de explorar.</div>
+    <div class="run r2"><b>Corrida 2.</b> Se confirma la rigidez del salto; tampoco hay feedback
+      sonoro al saltar. No existe ninguna señal de que el tiempo se está por acabar.</div>
+    <div class="run r3"><b>Corrida 3.</b> Propuesta: añadir <i>coyote time</i> + <i>jump buffer</i>,
+      SFX de recolección/salto, subir el tiempo a 40 s y un aviso visual en los últimos segundos.</div>
+
+    <!-- Anderson -->
+    <h3>Bitácora — Anderson Cango <span class="chip cy">enfoque Nivel 2</span></h3>
+    <div class="run"><b>Corrida 1.</b> Al completar el Nivel 2 <b>no se desbloquea el Nivel 3</b> y
+      la tecla <span class="kbd">N</span> reinicia el nivel. La consola muestra errores <b>404</b>
+      (<code>joltDash_strip.png</code>, <code>speed_boost.wav</code>). Los pinchos matan sin ningún
+      feedback.</div>
+    <div class="run r2"><b>Corrida 2.</b> El Nivel 2 <b>carga el mapa del Nivel 1</b> (bug de
+      navegación). Los <b>pickups de energía no se pueden agarrar</b> y el <b>dash es infinito</b>,
+      así que los pickups no sirven de nada.</div>
+    <div class="run r3"><b>Corrida 3.</b> El mapa real del Nivel 2 resulta <b>injugable</b>: el
+      spawn queda dentro de bloques sólidos y el piso es un muro continuo de pinchos sin ruta segura.</div>
+
+    <!-- Dayana -->
+    <h3>Bitácora — Dayana Lema <span class="chip mg">enfoque Nivel 3</span></h3>
+    <div class="run"><b>Corrida 1.</b> El Nivel 3 <b>no tiene música</b>. Disparar, destruir drones
+      y ganar/perder no producen sonido. No hay menú de <b>pausa</b> como en los otros niveles.</div>
+    <div class="run r2"><b>Corrida 2.</b> Las <b>balas no salen disparadas</b> (quedan pegadas al
+      personaje). Hay un <b>piso verde tóxico</b> que mata al tocarlo sin una razón clara de diseño.</div>
+    <div class="run r3"><b>Corrida 3.</b> <b>No todos los drones son alcanzables</b> (saltos entre
+      plataformas imposibles); el <b>contacto con enemigos no hace daño</b>; el <b>portal es
+      inalcanzable</b> por su altura y porque nunca se desbloquea.</div>
+
+    <div class="note" style="margin-top:18px;">
+      <b>Consolidación.</b> Del feedback se extrajeron las 9 mejoras obligatorias (3 por integrante)
+      listadas en la matriz siguiente. Durante la implementación, las corridas de Anderson y Dayana
+      revelaron además <b>fallos estructurales</b> (mapa del Nivel 2 y balas/portal del Nivel 3) que
+      se corrigieron como parte del pulido de sus respectivos niveles.
+    </div>
+  </section>
+
+  <!-- MATRIZ -->
+  <section class="sec">
+    <h3>Matriz de asignación de mejoras (9 mejoras · 3 por integrante)</h3>
+    <table>
+      <tr><th style="width:12%">Integrante</th><th style="width:26%">Mejora</th><th style="width:30%">Problema detectado</th><th>Solución técnica</th></tr>
+
+      <tr><td rowspan="3"><b>Dylan Granizo</b><br><span class="muted">Nivel 1 · Jolt</span></td>
+        <td>1. Coyote time + jump buffer</td>
+        <td>El salto se sentía rígido; no saltaba al dejar el borde.</td>
+        <td>Temporizadores <code>coyoteTimer</code> (100 ms) y <code>jumpBufferTimer</code> (120 ms) en <code>update()</code>, preservando el doble salto.</td></tr>
+      <tr><td>2. SFX y feedback de recolección</td>
+        <td>Recoger núcleos y saltar no daban retroalimentación.</td>
+        <td>Carga y reproducción de <code>collect.wav</code> al recolectar y un tick al saltar, con micro-animación de escala.</td></tr>
+      <tr><td>3. Timer jugable + aviso de peligro</td>
+        <td>25 s muy ajustado; sin señal de urgencia.</td>
+        <td>Tiempo a 40 s; el contador parpadea en rojo cuando quedan ≤ 10 s (tween de color/alpha).</td></tr>
+
+      <tr><td rowspan="3"><b>Anderson Cango</b><br><span class="muted">Nivel 2 · Dash</span></td>
+        <td>4. Fix de progresión</td>
+        <td>Completar N2 no desbloqueaba N3; tecla <span class="kbd">N</span> reiniciaba.</td>
+        <td><code>unlockLevel(3)</code> y <code>scene.start('Scene_Nivel3')</code> en la rama de la tecla siguiente.</td></tr>
+      <tr><td>5. Assets fantasma + SFX de dash</td>
+        <td>Errores 404 por <code>joltDash</code>/<code>speed_boost</code> inexistentes; dash sin sonido.</td>
+        <td>Eliminadas las cargas y el código muerto asociado; SFX de dash con un audio existente.</td></tr>
+      <tr><td>6. Feedback de daño en pinchos</td>
+        <td>Morir en pinchos no tenía impacto audiovisual.</td>
+        <td><code>hit.wav</code> + <i>flash</i> rojo de cámara al pisar pinchos, antes de la derrota.</td></tr>
+
+      <tr><td rowspan="3"><b>Dayana Lema</b><br><span class="muted">Nivel 3 · Kael</span></td>
+        <td>7. Música de nivel con fade</td>
+        <td>El Nivel 3 no tenía música (inconsistente con N1–N2).</td>
+        <td><code>bgm.wav</code> en loop con <i>fade-in/out</i> y limpieza al salir de la escena.</td></tr>
+      <tr><td>8. SFX de combate</td>
+        <td>Disparo, explosiones y victoria/derrota mudos.</td>
+        <td>SFX en <code>shoot()</code>, <code>hitEnemy()</code>, y jingles <code>win.wav</code>/<code>lose.wav</code>.</td></tr>
+      <tr><td>9. Menú de pausa + limpieza</td>
+        <td>N3 sin pausa; existían escenas huérfanas.</td>
+        <td>Pausa con <span class="kbd">ESC</span> (overlay + <code>physics.pause()</code>); eliminados <code>Scene_Game.js</code> y <code>Scene_End.js</code>.</td></tr>
+    </table>
+
+    <h3>Correcciones estructurales adicionales (pulido de niveles)</h3>
+    <table>
+      <tr><th style="width:20%">Área</th><th style="width:40%">Problema</th><th>Solución técnica</th></tr>
+      <tr><td><b>Navegación</b></td><td>El Nivel 2 mostraba el mapa del Nivel 1.</td>
+        <td>Colisión de clave de caché de tilemap: renombrada de <code>mapa_nivel1</code> a <code>mapa_nivel2</code>.</td></tr>
+      <tr><td><b>Nivel 2 — mapa</b></td><td>Spawn dentro de sólidos y piso de pinchos sin ruta.</td>
+        <td>Mapa rediseñado: piso continuo + 3 tiras de pinchos cruzables con dash/salto; pickups, núcleos y portal reubicados.</td></tr>
+      <tr><td><b>Nivel 2 — pickups/dash</b></td><td>Pickups incolectables; dash "infinito".</td>
+        <td>Cuerpo de física fuera del <i>container</i> (coordenadas de mundo); cooldown de dash a 3.5 s.</td></tr>
+      <tr><td><b>Nivel 3 — balas</b></td><td>Las balas no se disparaban.</td>
+        <td><code>setVelocityX</code> se ejecutaba antes de agregar la bala al grupo (que reseteaba la velocidad); reordenado.</td></tr>
+      <tr><td><b>Nivel 3 — jugabilidad</b></td><td>Piso tóxico letal; drones inalcanzables; portal fuera de alcance.</td>
+        <td>Eliminado el sludge; salto de Kael a −520 para alcanzar todas las plataformas; portal bajado y hitboxes ampliados.</td></tr>
+    </table>
+    <p class="muted" style="font-size:12.5px; margin-top:8px;">Todas las mejoras y correcciones
+    quedaron implementadas y funcionales en la versión desplegada, verificadas mediante corridas
+    completas de los tres niveles sin errores en consola.</p>
+  </section>
+
+  <div class="foot">
+    Neon Escape · Game Design Document · Escuela Politécnica Nacional — Ingeniería de Software GR1 ·
+    Juegos Interactivos · 2026<br>
+    Dylan Granizo Ayala · Anderson Cango · Dayana Lema
+  </div>
+</div>
+
+</body>
+</html>
