@@ -212,7 +212,7 @@ class Scene_Nivel2 extends Phaser.Scene {
     activateDash() {
         this.isDashing = true;
         this.canDash = false;
-        this.dashCooldown = 0.8; // 0.8 segundos de cooldown
+        this.dashCooldown = 3.5; // recarga lenta: obliga a usar los pickups de energia
         this.dashDuration = 0.12; // 120 milésimas de segundo
         
         const direction = this.player.flipX ? -1 : 1;
@@ -380,30 +380,30 @@ class Scene_Nivel2 extends Phaser.Scene {
     }
     
     createDashPickup(x, y) {
-        const container = this.add.container(x, y);
-        const glow = this.add.ellipse(0, 0, 28, 28, 0x00F5FF, 0.35);
-        const core = this.add.rectangle(0, 0, 14, 14, 0x00F5FF, 0.95);
-        const icon = this.add.text(0, 0, '⚡', {
+        // Colocados directamente en coordenadas del mundo (sin container) para que
+        // el cuerpo de fisica estatico quede donde se ve el icono y el overlap funcione.
+        const glow = this.add.ellipse(x, y, 28, 28, 0x00F5FF, 0.35);
+        const icon = this.add.text(x, y, '⚡', {
             fontSize: '16px',
             color: '#FFFFFF'
         }).setOrigin(0.5);
-        
-        container.add([glow, core, icon]);
-        
+        const core = this.add.rectangle(x, y, 14, 14, 0x00F5FF, 0.95);
+
         this.physics.add.existing(core, true);
-        core.body.setCircle(7, -7, -7);
-        core.parts = container;
+        core.body.setCircle(16, -9, -9); // hitbox generoso centrado en el icono
+        core.parts = [glow, icon, core];
         this.dashPickups.add(core);
-        
+
+        // Flotar solo los visuales; el cuerpo estatico permanece fijo para el overlap.
         this.tweens.add({
-            targets: container,
+            targets: [glow, icon],
             y: y - 6,
             duration: 600,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
-        
+
         this.tweens.add({
             targets: icon,
             angle: 360,
@@ -428,9 +428,9 @@ class Scene_Nivel2 extends Phaser.Scene {
             scaleY: 1.5,
             alpha: 0,
             duration: 150,
-            onComplete: () => pickup.parts.destroy()
+            onComplete: () => pickup.parts.forEach(part => part.destroy())
         });
-        
+
         this.showPickupMessage('¡DASH RECARGADO!');
     }
     
@@ -681,7 +681,7 @@ class Scene_Nivel2 extends Phaser.Scene {
     // ========== OBJETIVO (PORTAL) ==========
     createGoal(mapWidth) {
         const portalX = mapWidth - 90;
-        const portalY = 360;
+        const portalY = 300; // alineado con la superficie de la plataforma derecha (y~320)
 
         const shadow = this.add.ellipse(portalX, portalY + 36, 84, 20, 0x001B2E, 0.7);
         const outerGlow = this.add.ellipse(portalX, portalY, 76, 104, 0x00F5FF, 0.14);
