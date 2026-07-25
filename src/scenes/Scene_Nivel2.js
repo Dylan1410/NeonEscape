@@ -5,7 +5,7 @@ class Scene_Nivel2 extends Phaser.Scene {
 
     preload() {
         this.load.image('tiles_cyberpunk', 'assets/images/tileset_cyberpunk.png');
-        this.load.tilemapTiledJSON('mapa_nivel1', 'assets/tilemaps/nivel2.json');
+        this.load.tilemapTiledJSON('mapa_nivel2', 'assets/tilemaps/nivel2.json');
         this.load.audio('nivel1_loop', 'assets/audio/nivel1_loop.wav');
         // Mejora 5: SFX reales existentes (se eliminaron speed_boost.wav y joltDash_strip.png inexistentes)
         this.load.audio('sfx_dash', 'assets/audio/menu_select.wav');
@@ -17,7 +17,7 @@ class Scene_Nivel2 extends Phaser.Scene {
     }
 
     create() {
-        const map = this.make.tilemap({ key: 'mapa_nivel1' });
+        const map = this.make.tilemap({ key: 'mapa_nivel2' });
         const tileset = map.addTilesetImage('cyberpunk_tiles', 'tiles_cyberpunk');
 
         if (!tileset) {
@@ -37,7 +37,7 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.spikeTileIds = [982, 983];
         this.mapHeight = map.heightInPixels;
         this.levelFinished = false;
-        this.levelTime = 25;
+        this.levelTime = 45;
         this.collectiblesNeeded = 3;
         this.collectiblesFound = 0;
         this.isPaused = false;
@@ -73,9 +73,7 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.player.body.setSize(joltBodyWidth, joltBodyHeight);
         this.player.body.setOffset(joltBodyOffsetX, joltBodyOffsetY);
 
-        this.createMovingPlatform(capaPlataformas);
         this.physics.add.collider(this.player, capaPlataformas);
-        this.physics.add.collider(this.player, this.movingPlatform);
         this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
         // ========== PINCHOS (tiles 982 y 983) ==========
@@ -200,7 +198,6 @@ class Scene_Nivel2 extends Phaser.Scene {
 
         this.updateJoltAnimation(isGrounded, moveInput);
 
-        this.updateMovingPlatform();
         this.checkSpikeTiles();
 
         if (this.player.body.bottom >= this.mapHeight - 2) {
@@ -365,9 +362,9 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.dashPickups = this.physics.add.staticGroup();
         
         const dashPickupPositions = [
-            { x: 420, y: 260 },
-            { x: 900, y: 260 },
-            { x: 1300, y: 260 }
+            { x: 304, y: 288 },
+            { x: 624, y: 288 },
+            { x: 944, y: 288 }
         ];
         
         dashPickupPositions.forEach(pos => {
@@ -502,71 +499,6 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.player.play('jolt-idle', true);
     }
 
-    // ========== PLATAFORMA MOVIL ==========
-    createMovingPlatform(capaPlataformas) {
-        const tileX = 17;
-        const tileY = 8;
-        const tileSize = 32;
-        const width = tileSize * 2;
-        const height = tileSize * 2;
-        const platformTiles = [];
-
-        for (let y = 0; y < 2; y++) {
-            platformTiles[y] = [];
-            for (let x = 0; x < 2; x++) {
-                const tile = capaPlataformas.getTileAt(tileX + x, tileY + y);
-                platformTiles[y][x] = tile ? tile.index : -1;
-            }
-        }
-
-        for (let y = tileY; y <= tileY + 1; y++) {
-            for (let x = tileX; x <= tileX + 1; x++) {
-                capaPlataformas.removeTileAt(x, y);
-            }
-        }
-
-        const startX = tileX * tileSize;
-        const startY = tileY * tileSize;
-        const platformMap = this.make.tilemap({
-            data: platformTiles,
-            tileWidth: tileSize,
-            tileHeight: tileSize
-        });
-        const platformTileset = platformMap.addTilesetImage('cyberpunk_tiles', 'tiles_cyberpunk');
-        this.movingPlatformVisual = platformMap.createLayer(0, platformTileset, startX, startY);
-
-        this.movingPlatform = this.add.rectangle(
-            startX + width / 2,
-            startY + height / 2,
-            width,
-            height,
-            0x000000,
-            0
-        );
-
-        this.physics.add.existing(this.movingPlatform);
-        this.movingPlatform.body.allowGravity = false;
-        this.movingPlatform.body.setImmovable(true);
-        this.movingPlatform.body.setVelocityX(75);
-
-        this.movingPlatform.minX = this.movingPlatform.x - tileSize * 3;
-        this.movingPlatform.maxX = this.movingPlatform.x + tileSize * 3;
-
-        this.movingPlatformVisual.x = this.movingPlatform.x - width / 2;
-        this.movingPlatformVisual.y = this.movingPlatform.y - height / 2;
-    }
-
-    updateMovingPlatform() {
-        if (this.movingPlatform.x <= this.movingPlatform.minX) {
-            this.movingPlatform.body.setVelocityX(75);
-        } else if (this.movingPlatform.x >= this.movingPlatform.maxX) {
-            this.movingPlatform.body.setVelocityX(-75);
-        }
-
-        this.movingPlatformVisual.x = this.movingPlatform.x - this.movingPlatform.width / 2;
-        this.movingPlatformVisual.y = this.movingPlatform.y - this.movingPlatform.height / 2;
-    }
-
     // ========== MÚSICA ==========
     startLevelMusic() {
         if (this.levelMusic) {
@@ -681,7 +613,7 @@ class Scene_Nivel2 extends Phaser.Scene {
     // ========== OBJETIVO (PORTAL) ==========
     createGoal(mapWidth) {
         const portalX = mapWidth - 90;
-        const portalY = 300; // alineado con la superficie de la plataforma derecha (y~320)
+        const portalY = 296; // sobre la superficie del piso (y~320)
 
         const shadow = this.add.ellipse(portalX, portalY + 36, 84, 20, 0x001B2E, 0.7);
         const outerGlow = this.add.ellipse(portalX, portalY, 76, 104, 0x00F5FF, 0.14);
@@ -753,9 +685,9 @@ class Scene_Nivel2 extends Phaser.Scene {
     createCollectibles() {
         this.collectibles = this.physics.add.staticGroup();
 
-        this.createCollectible(270, 400);
-        this.createCollectible(575, 450);
-        this.createCollectible(1040, 400);
+        this.createCollectible(176, 288);
+        this.createCollectible(496, 288);
+        this.createCollectible(816, 288);
 
         this.physics.add.overlap(this.player, this.collectibles, (player, collectible) => {
             this.collectCollectible(collectible);
