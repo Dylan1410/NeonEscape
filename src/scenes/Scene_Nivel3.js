@@ -15,7 +15,6 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.load.image('bullet', 'assets/images/fx/bullet.png');
         this.load.spritesheet('explosion', 'assets/images/fx/explosion_strip.png', { frameWidth: 32, frameHeight: 32 });
 
-        this.load.image('sludge', 'assets/images/environment/chemical_sludge.png');
         this.load.image('portal_lab', 'assets/images/environment/lab_portal.png');
 
         // Mejoras 7 y 8: audio del nivel (musica + SFX de combate)
@@ -55,7 +54,7 @@ class Scene_Nivel3 extends Phaser.Scene {
             color: '#FFFFFF'
         }).setDepth(10);
 
-        this.helpText = this.add.text(20, 75, 'Objetivo: elimina 5 drones y entra al portal | ESPACIO = disparar | Verde = muerte', {
+        this.helpText = this.add.text(20, 75, 'Objetivo: elimina 5 drones y entra al portal | ESPACIO = disparar | ESC = pausa', {
             fontFamily: 'Arial',
             fontSize: '13px',
             color: '#00F5FF'
@@ -70,12 +69,6 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.createPlatform(365, 285, 210, 24);
         this.createPlatform(625, 215, 180, 24);
         this.createPlatform(145, 220, 170, 24);
-
-        this.sludgeGroup = this.physics.add.staticGroup();
-
-        this.createSludge(400, 536);
-        this.createSludge(440, 536);
-        this.createSludge(480, 536);
 
         this.player = this.physics.add.sprite(80, 505, 'kael_idle');
         this.player.setScale(1.9);
@@ -122,7 +115,6 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.physics.add.overlap(this.bullets, this.enemies, this.hitEnemy, null, this);
         this.physics.add.overlap(this.player, this.enemies, this.damagePlayer, null, this);
         this.physics.add.overlap(this.player, this.enemyBullets, this.damagePlayerByBullet, null, this);
-        this.physics.add.overlap(this.player, this.sludgeGroup, this.toxicDeath, null, this);
         this.physics.add.overlap(this.player, this.portal, this.finishLevel, null, this);
 
         this.time.addEvent({
@@ -162,7 +154,7 @@ class Scene_Nivel3 extends Phaser.Scene {
         }
 
         if (Phaser.Input.Keyboard.JustDown(this.cursors.up) && this.player.body.touching.down) {
-            this.player.setVelocityY(-450);
+            this.player.setVelocityY(-520); // mayor altura para alcanzar todas las plataformas
         }
 
         if (!this.player.body.touching.down) {
@@ -280,19 +272,13 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.platforms.add(platform);
     }
 
-    createSludge(x, y) {
-        let sludge = this.physics.add.staticSprite(x, y, 'sludge');
-        sludge.setScale(1.4);
-        this.sludgeGroup.add(sludge);
-    }
-
     createDrone(x, y, minX, maxX) {
         let drone = this.physics.add.sprite(x, y, 'drone');
 
         drone.setScale(2.4);
         drone.body.allowGravity = false;
         drone.setImmovable(true);
-        drone.body.setSize(24, 18);
+        drone.body.setSize(26, 28); // hitbox mas alto: disparos y contacto mas tolerantes
 
         drone.startY = y;
         drone.minX = minX;
@@ -309,7 +295,7 @@ class Scene_Nivel3 extends Phaser.Scene {
         turret.setScale(2.2);
         turret.body.allowGravity = false;
         turret.setImmovable(true);
-        turret.body.setSize(24, 24);
+        turret.body.setSize(28, 30); // hitbox mas amplio para acertar y para el contacto
 
         turret.enemyType = 'turret';
         turret.shootDirection = direction;
@@ -468,38 +454,6 @@ class Scene_Nivel3 extends Phaser.Scene {
     damagePlayerByBullet(player, bullet) {
         if (bullet && bullet.active) bullet.destroy();
         this.damagePlayer(player, bullet);
-    }
-
-    toxicDeath() {
-        if (this.isDead || this.levelCompleted) return;
-
-        this.isDead = true;
-        this.stopLevelMusic();
-        this.sound.play('n3_lose', { volume: 0.6 });
-        this.player.setTint(0x39FF14);
-
-        this.cameras.main.shake(300, 0.012);
-        this.cameras.main.flash(250, 57, 255, 20);
-
-        this.add.rectangle(400, 300, 520, 150, 0x000000, 0.78).setDepth(20);
-
-        this.add.text(400, 275, 'ZONA TÓXICA', {
-            fontFamily: 'Arial',
-            fontSize: '34px',
-            color: '#39FF14'
-        }).setOrigin(0.5).setDepth(30);
-
-        this.add.text(400, 325, 'Reiniciando nivel...', {
-            fontFamily: 'Arial',
-            fontSize: '18px',
-            color: '#FFFFFF'
-        }).setOrigin(0.5).setDepth(30);
-
-        this.physics.pause();
-
-        this.time.delayedCall(1200, () => {
-            this.scene.restart();
-        });
     }
 
     cleanBullets() {
