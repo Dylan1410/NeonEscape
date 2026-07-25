@@ -106,10 +106,11 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.createTurret(610, 170, 'left');
         this.createTurret(150, 430, 'right');
 
-        this.portal = this.physics.add.staticSprite(750, 505, 'portal_lab');
+        this.portal = this.physics.add.staticSprite(750, 525, 'portal_lab');
         this.portal.setScale(2.2);
-        this.portal.body.setSize(24, 32);
+        this.portal.body.setSize(24, 40);
         this.portal.body.setOffset(4, 0);
+        this.portal.refreshBody();
         this.portal.setTint(0x555555);
 
         this.portalText = this.add.text(610, 455, 'Portal bloqueado', {
@@ -353,13 +354,14 @@ class Scene_Nivel3 extends Phaser.Scene {
             'bullet'
         );
 
+        // Agregar al grupo ANTES de fijar la velocidad: al agregarlo, el grupo
+        // puede resetear la velocidad, por eso setVelocityX debe ir al final.
+        this.bullets.add(bullet);
+
         bullet.setScale(1.5);
         bullet.body.allowGravity = false;
-        bullet.setVelocityX(560 * direction);
-
         if (direction === -1) bullet.flipX = true;
-
-        this.bullets.add(bullet);
+        bullet.setVelocityX(560 * direction);
 
         this.time.delayedCall(260, () => {
             this.canShoot = true;
@@ -380,14 +382,13 @@ class Scene_Nivel3 extends Phaser.Scene {
                 'bullet'
             );
 
+            this.enemyBullets.add(bullet);
+
             bullet.setScale(1.2);
             bullet.setTint(0x00F5FF);
             bullet.body.allowGravity = false;
-            bullet.setVelocityX(360 * direction);
-
             if (direction === -1) bullet.flipX = true;
-
-            this.enemyBullets.add(bullet);
+            bullet.setVelocityX(360 * direction);
         });
     }
 
