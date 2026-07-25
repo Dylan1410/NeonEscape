@@ -17,6 +17,13 @@ class Scene_Nivel3 extends Phaser.Scene {
 
         this.load.image('sludge', 'assets/images/environment/chemical_sludge.png');
         this.load.image('portal_lab', 'assets/images/environment/lab_portal.png');
+
+        // Mejoras 7 y 8: audio del nivel (musica + SFX de combate)
+        this.load.audio('n3_bgm', 'assets/audio/bgm.wav');
+        this.load.audio('n3_shoot', 'assets/audio/menu_select.wav');
+        this.load.audio('n3_hit', 'assets/audio/hit.wav');
+        this.load.audio('n3_win', 'assets/audio/win.wav');
+        this.load.audio('n3_lose', 'assets/audio/lose.wav');
     }
 
     create() {
@@ -29,6 +36,10 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.isDead = false;
         this.isInvulnerable = false;
         this.levelCompleted = false;
+        this.isPaused = false;
+
+        // Mejora 7: musica de nivel con fade-in
+        this.startLevelMusic();
 
         this.createBackground();
 
@@ -78,6 +89,7 @@ class Scene_Nivel3 extends Phaser.Scene {
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keyShoot = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
         this.bullets = this.physics.add.group();
         this.enemyBullets = this.physics.add.group();
@@ -124,6 +136,13 @@ class Scene_Nivel3 extends Phaser.Scene {
     }
 
     update() {
+        // Mejora 9: pausa con ESC
+        if (Phaser.Input.Keyboard.JustDown(this.pauseKey) && !this.isDead && !this.levelCompleted) {
+            this.togglePause();
+        }
+
+        if (this.isPaused) return;
+
         if (this.isDead || this.levelCompleted) return;
 
         let speed = 190;
@@ -323,6 +342,7 @@ class Scene_Nivel3 extends Phaser.Scene {
         if (!this.canShoot) return;
 
         this.canShoot = false;
+        this.sound.play('n3_shoot', { volume: 0.35 });
         this.player.anims.play('kael_shoot_anim', true);
 
         let direction = this.player.flipX ? -1 : 1;
@@ -347,7 +367,7 @@ class Scene_Nivel3 extends Phaser.Scene {
     }
 
     turretsShoot() {
-        if (this.isDead || this.levelCompleted) return;
+        if (this.isDead || this.levelCompleted || this.isPaused) return;
 
         this.enemies.children.iterate((enemy) => {
             if (!enemy || enemy.enemyType !== 'turret') return;
@@ -375,6 +395,8 @@ class Scene_Nivel3 extends Phaser.Scene {
         if (!bullet.active || !enemy.active) return;
 
         bullet.destroy();
+
+        this.sound.play('n3_hit', { volume: 0.5 });
 
         let boom = this.add.sprite(enemy.x, enemy.y, 'explosion');
         boom.setScale(1.8);
@@ -451,6 +473,8 @@ class Scene_Nivel3 extends Phaser.Scene {
         if (this.isDead || this.levelCompleted) return;
 
         this.isDead = true;
+        this.stopLevelMusic();
+        this.sound.play('n3_lose', { volume: 0.6 });
         this.player.setTint(0x39FF14);
 
         this.cameras.main.shake(300, 0.012);
@@ -493,6 +517,9 @@ class Scene_Nivel3 extends Phaser.Scene {
         this.levelCompleted = true;
         localStorage.setItem('neonEscapeUnlockedLevel', '3');
 
+        this.stopLevelMusic();
+        this.sound.play('n3_win', { volume: 0.6 });
+
         this.add.rectangle(400, 300, 520, 150, 0x000000, 0.75).setDepth(20);
 
         this.add.text(400, 275, '¡NIVEL 3 COMPLETADO!', {
@@ -516,6 +543,8 @@ class Scene_Nivel3 extends Phaser.Scene {
 
     defeat() {
         this.isDead = true;
+        this.stopLevelMusic();
+        this.sound.play('n3_lose', { volume: 0.6 });
         this.player.anims.play('kael_death_anim', true);
         this.physics.pause();
 
@@ -532,5 +561,118 @@ class Scene_Nivel3 extends Phaser.Scene {
             fontSize: '18px',
             color: '#FFFFFF'
         }).setOrigin(0.5).setDepth(21);
+    }
+
+    // ========== MUSICA (Mejora 7) ==========
+    startLevelMusic() {
+        if (this.levelMusic) {
+            this.levelMusic.stop();
+        }
+
+        this.levelMusic = this.sound.add('n3_bgm', { loop: true, volume: 0 });
+        this.levelMusic.play();
+        this.tweens.add({ targets: this.levelMusic, volume: 0.4, duration: 800 });
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.stopLevelMusic());
+    }
+
+    stopLevelMusic() {
+        if (!this.levelMusic) return;
+
+        const music = this.levelMusic;
+        this.levelMusic = null;
+
+        this.tweens.add({
+            targets: music,
+            volume: 0,
+            duration: 400,
+            onComplete: () => {
+                music.stop();
+                music.destroy();
+            }
+        });
+    }
+
+    // ========== PAUSA (Mejora 9) ==========
+    togglePause() {
+        if (this.isPaused) {
+            this.resumeLevel();
+        } else {
+            this.pauseLevel();
+        }
+    }
+
+    pauseLevel() {
+        this.isPaused = true;
+        this.physics.pause();
+
+        if (this.levelMusic) {
+            this.levelMusic.setVolume(0.15);
+        }
+
+        this.createPauseOverlay();
+    }
+
+    resumeLevel() {
+        this.isPaused = false;
+        this.physics.resume();
+
+        if (this.levelMusic) {
+            this.levelMusic.setVolume(0.4);
+        }
+
+        this.destroyPauseOverlay();
+    }
+
+    createPauseOverlay() {
+        if (this.pauseOverlay) return;
+
+        this.pauseOverlay = this.add.container(0, 0).setDepth(2000).setScrollFactor(0);
+        const shade = this.add.rectangle(400, 300, 800, 600, 0x050711, 0.68);
+        const panel = this.add.rectangle(400, 300, 430, 270, 0x1A1A2E, 0.96).setStrokeStyle(3, 0xFF2A6D, 0.95);
+        const title = this.add.text(400, 220, 'PAUSA', {
+            fontFamily: 'Arial',
+            fontSize: '36px',
+            color: '#FFE66D',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        const hint = this.add.text(400, 265, 'ESC: continuar   R: reiniciar   M: menu', {
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            color: '#B9C7FF'
+        }).setOrigin(0.5);
+
+        this.pauseOverlay.add([shade, panel, title, hint]);
+        this.pauseOverlay.add(this.createPauseButton(260, 340, 'Continuar', () => this.resumeLevel()));
+        this.pauseOverlay.add(this.createPauseButton(400, 340, 'Reiniciar', () => this.scene.restart()));
+        this.pauseOverlay.add(this.createPauseButton(540, 340, 'Menu', () => {
+            this.stopLevelMusic();
+            this.scene.start('Scene_Menu');
+        }));
+    }
+
+    createPauseButton(x, y, label, action) {
+        const container = this.add.container(0, 0);
+        const button = this.add.rectangle(x, y, 118, 42, 0x071A2E, 0.98).setStrokeStyle(2, 0x00F5FF, 0.9);
+        const text = this.add.text(x, y, label, {
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            color: '#FFFFFF'
+        }).setOrigin(0.5);
+
+        button.setInteractive({ useHandCursor: true });
+        button.on('pointerover', () => button.setFillStyle(0x203C54, 1));
+        button.on('pointerout', () => button.setFillStyle(0x071A2E, 0.98));
+        button.on('pointerdown', action);
+
+        container.add([button, text]);
+        return container;
+    }
+
+    destroyPauseOverlay() {
+        if (this.pauseOverlay) {
+            this.pauseOverlay.destroy();
+            this.pauseOverlay = null;
+        }
     }
 }

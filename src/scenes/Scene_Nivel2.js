@@ -7,12 +7,13 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.load.image('tiles_cyberpunk', 'assets/images/tileset_cyberpunk.png');
         this.load.tilemapTiledJSON('mapa_nivel1', 'assets/tilemaps/nivel2.json');
         this.load.audio('nivel1_loop', 'assets/audio/nivel1_loop.wav');
-        this.load.audio('speed_boost', 'assets/audio/speed_boost.wav');
+        // Mejora 5: SFX reales existentes (se eliminaron speed_boost.wav y joltDash_strip.png inexistentes)
+        this.load.audio('sfx_dash', 'assets/audio/menu_select.wav');
+        this.load.audio('sfx_hit', 'assets/audio/hit.wav');
         this.load.spritesheet('jolt_idle', 'assets/images/jolt/joltIdle_strip.png', { frameWidth: 96, frameHeight: 96 });
         this.load.spritesheet('jolt_run', 'assets/images/jolt/joltRun_strip.png', { frameWidth: 96, frameHeight: 96 });
         this.load.spritesheet('jolt_jump', 'assets/images/jolt/joltJump_strip.png', { frameWidth: 96, frameHeight: 96 });
         this.load.spritesheet('jolt_death', 'assets/images/jolt/joltDeath_strip.png', { frameWidth: 96, frameHeight: 96 });
-        this.load.spritesheet('jolt_dash', 'assets/images/jolt/joltDash_strip.png', { frameWidth: 96, frameHeight: 96 });
     }
 
     create() {
@@ -131,7 +132,7 @@ class Scene_Nivel2 extends Phaser.Scene {
 
             if (this.canGoNext && Phaser.Input.Keyboard.JustDown(this.nextKey)) {
                 this.stopLevelMusic();
-                this.scene.start('Scene_Nivel2');
+                this.scene.start('Scene_Nivel3');
             }
 
             return;
@@ -224,14 +225,8 @@ class Scene_Nivel2 extends Phaser.Scene {
         this.cameras.main.shake(60, 0.008);
         this.createDashTrail();
         
-        if (this.sound.get('speed_boost')) {
-            this.sound.play('speed_boost', { volume: 0.6 });
-        }
-        
-        if (this.anims.exists('jolt-dash')) {
-            this.player.play('jolt-dash', true);
-        }
-        
+        this.sound.play('sfx_dash', { volume: 0.5 });
+
         this.updateDashIndicator(false);
     }
     
@@ -358,6 +353,9 @@ class Scene_Nivel2 extends Phaser.Scene {
         });
 
         if (isOnSpike) {
+            // Mejora 6: impacto audiovisual al morir en pinchos
+            this.sound.play('sfx_hit', { volume: 0.6 });
+            this.cameras.main.flash(250, 255, 42, 109);
             this.failLevel('PINCHOS MORTALES');
         }
     }
@@ -486,15 +484,6 @@ class Scene_Nivel2 extends Phaser.Scene {
             frameRate: 14,
             repeat: 0
         });
-        
-        if (this.textures.exists('jolt_dash')) {
-            this.anims.create({
-                key: 'jolt-dash',
-                frames: this.anims.generateFrameNumbers('jolt_dash', { start: 0, end: 7 }),
-                frameRate: 20,
-                repeat: 0
-            });
-        }
     }
 
     updateJoltAnimation(isGrounded, isMoving) {
@@ -916,7 +905,7 @@ class Scene_Nivel2 extends Phaser.Scene {
 
         this.levelFinished = true;
         this.canGoNext = true;
-        this.unlockLevel(2);
+        this.unlockLevel(3);
         this.player.body.setVelocity(0, 0);
         this.player.play('jolt-idle', true);
         this.physics.pause();

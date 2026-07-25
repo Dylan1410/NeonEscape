@@ -11,6 +11,8 @@ class Scene_Nivel1 extends Phaser.Scene {
         this.load.spritesheet('jolt_run', 'assets/images/jolt/joltRun_strip.png', { frameWidth: 96, frameHeight: 96 });
         this.load.spritesheet('jolt_jump', 'assets/images/jolt/joltJump_strip.png', { frameWidth: 96, frameHeight: 96 });
         this.load.spritesheet('jolt_death', 'assets/images/jolt/joltDeath_strip.png', { frameWidth: 96, frameHeight: 96 });
+        this.load.audio('sfx_collect', 'assets/audio/collect.wav');
+        this.load.audio('sfx_jump', 'assets/audio/menu_select.wav');
     }
 
     create() {
@@ -32,10 +34,17 @@ class Scene_Nivel1 extends Phaser.Scene {
 
         this.mapHeight = map.heightInPixels;
         this.levelFinished = false;
-        this.levelTime = 25;
+        this.levelTime = 40;
         this.collectiblesNeeded = 3;
         this.collectiblesFound = 0;
         this.isPaused = false;
+
+        // Mejora 1: Game feel del salto (coyote time + buffer de input)
+        this.coyoteMax = 100;      // ms de gracia para saltar tras dejar el suelo
+        this.jumpBufferMax = 120;  // ms de input de salto bufferizado
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
+
         this.startLevelMusic();
 
         this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
@@ -86,6 +95,20 @@ class Scene_Nivel1 extends Phaser.Scene {
 
                 this.levelTime--;
                 this.timeText.setText(`Tiempo: ${this.levelTime}`);
+
+                // Mejora 3 (UI/UX): aviso de peligro en los ultimos 10 segundos
+                if (this.levelTime <= 10) {
+                    this.timeText.setColor('#FF2A6D');
+                    if (!this.timeBlink) {
+                        this.timeBlink = this.tweens.add({
+                            targets: this.timeText,
+                            alpha: 0.2,
+                            duration: 300,
+                            yoyo: true,
+                            repeat: -1
+                        });
+                    }
+                }
 
                 if (this.levelTime <= 0) {
                     this.failLevel('Tiempo agotado');
@@ -142,19 +165,37 @@ class Scene_Nivel1 extends Phaser.Scene {
             this.player.body.setVelocityX(0);
         }
 
+        const delta = this.game.loop.delta;
         const isGrounded = this.player.body.blocked.down;
         const justJumped = Phaser.Input.Keyboard.JustDown(this.cursors.up);
 
+        // Coyote time: refresca la ventana de gracia mientras esta en el suelo
         if (isGrounded && this.player.body.velocity.y >= 0) {
             this.jumpCount = 0;
+            this.coyoteTimer = this.coyoteMax;
+        } else {
+            this.coyoteTimer -= delta;
         }
 
-        if (justJumped && isGrounded) {
+        // Jump buffer: recuerda el input de salto por unos ms
+        if (justJumped) {
+            this.jumpBufferTimer = this.jumpBufferMax;
+        } else {
+            this.jumpBufferTimer -= delta;
+        }
+
+        if (this.jumpBufferTimer > 0 && this.jumpCount === 0 && this.coyoteTimer > 0) {
+            // Primer salto: en suelo o dentro de la ventana de coyote
             this.player.body.setVelocityY(-255);
             this.jumpCount = 1;
-        } else if (justJumped && this.jumpCount < 2) {
+            this.jumpBufferTimer = 0;
+            this.coyoteTimer = 0;
+            this.sound.play('sfx_jump', { volume: 0.25 });
+        } else if (justJumped && this.jumpCount === 1) {
+            // Doble salto: requiere una pulsacion fresca en el aire
             this.player.body.setVelocityY(-315);
             this.jumpCount = 2;
+            this.sound.play('sfx_jump', { volume: 0.2 });
         }
 
         this.updateJoltAnimation(isGrounded);
@@ -519,6 +560,7 @@ class Scene_Nivel1 extends Phaser.Scene {
 
         this.collectiblesFound++;
         this.collectText.setText(`Nucleos: ${this.collectiblesFound}/${this.collectiblesNeeded}`);
+        this.sound.play('sfx_collect', { volume: 0.5 });
 
         collectible.body.enable = false;
         collectible.setActive(false);
